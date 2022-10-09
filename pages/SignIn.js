@@ -33,8 +33,9 @@ export default function SignIn({ navigation }) {
 					password: password,
 				}
 			);
-			dispatch({ type: 'SET_TOKEN', payload: data.token });
+
 			await SecureStore.setItemAsync('user_token', data.token);
+			await dispatch({ type: 'SET_TOKEN', payload: data.token });
 			console.log(data);
 			// console.log('from login', state);
 		} catch (err) {

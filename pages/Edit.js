@@ -1,5 +1,5 @@
 // import { StatusBar } from 'expo-status-bar';
-import React, { useRef } from 'react';
+import React, { useEffect, useReducer, useRef, useState } from 'react';
 import {
 	StyleSheet,
 	Text,
@@ -7,9 +7,6 @@ import {
 	View,
 	StatusBar,
 	TouchableOpacity,
-	TouchableWithoutFeedback,
-	KeyboardAvoidingView,
-	Keyboard,
 	Image,
 	ScrollView,
 } from 'react-native';
@@ -19,9 +16,62 @@ import Card from '../components/Card';
 import EditTask from '../components/EditTask';
 import Input from '../components/Input';
 import TaskList, { EditTaskList } from '../components/TaskList';
+import * as SecureStore from 'expo-secure-store';
+import axios from 'axios';
 
 export default function Edit({ navigation }) {
 	const refRBSheet = useRef();
+	const [tasks, setTasks] = useState([]);
+	const [loopTasks, setLoopTasks] = useState('');
+	const [currentSheet, setCurrentSheet] = useState('');
+	// const [completed, setComplted] = useState()
+
+	function reducer(state, action) {
+		switch (action.type) {
+			case 'reverseCheck':
+				let stateCopy = [...state];
+				stateCopy[Number(action.payload)] = {
+					...stateCopy[Number(action.payload)],
+					checked: !stateCopy[Number(action.payload)].checked,
+				};
+
+				return stateCopy;
+
+			default:
+				return state;
+		}
+	}
+
+	const [state, dispatch] = useReducer(reducer, tasks);
+
+	useEffect(() => {
+		async function getTask() {
+			try {
+				let token = await SecureStore.getItemAsync('user_token');
+
+				const { data } = await axios.get(
+					'https://quicktodo-server.herokuapp.com/task',
+					{
+						headers: { Authorization: `Bearer ${token}` },
+					}
+				);
+				setTasks(data.task);
+
+				const fillteredTask = data.task.filter(
+					(item) => item.completed === true
+				);
+
+				setLoopTasks(fillteredTask.length);
+			} catch (err) {
+				console.log(err);
+			}
+		}
+		getTask();
+	}, []);
+
+	// function updateTask() {
+
+	// }
 	return (
 		<SafeAreaView
 			style={[
@@ -54,29 +104,40 @@ export default function Edit({ navigation }) {
 				<View behavior={'position'} style={styles.mainContainer}>
 					{/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
 					<View style={styles.cardContainer}>
-						<Card cardTitle={'Completed'} cardNumber={0} />
-						<Card cardTitle={'Pending'} cardNumber={3} />
+						<Card cardTitle={'Completed'} cardNumber={loopTasks} />
+						<Card cardTitle={'Pending'} cardNumber={tasks.length} />
 					</View>
 					<View style={styles.taskHeading}>
-						<Text style={styles.titleHeading}>My Task</Text>
-						<View style={styles.iconContainer}>
-							<TouchableOpacity
-								activeOpacity={0.8}
-								onPress={() => refRBSheet.current.open()}>
-								<Image source={require('../assets/plusico.png')} />
-							</TouchableOpacity>
-						</View>
+						<Text style={styles.titleHeading}>Edit Task</Text>
+						{/* <View style={styles.iconContainer}>
+							<Image source={require('../assets/plusico.png')} />
+						</View> */}
 					</View>
 					<ScrollView style={styles.scrollView}>
 						<View style={styles.inputContainer}>
-							<EditTaskList taskText='Go Shopping' />
-							<EditTaskList taskText='Take My Bath' />
-							<EditTaskList taskText='Example Task' />
-							<EditTaskList taskText='Example Task' />
+							{tasks ? (
+								tasks.map((task) => (
+									<EditTaskList
+										key={task.id}
+										id={task.id}
+										taskText={task.title}
+										completed={task.completed}
+										refRBSheet={refRBSheet}
+										setCurrentSheet={setCurrentSheet}
+										dispatch={dispatch}
+									/>
+								))
+							) : (
+								<Text>Loading ...</Text>
+							)}
 						</View>
+						<View>{state.id}</View>
 					</ScrollView>
 
-					<ButtomSheet component={<EditTask />} refRBSheet={refRBSheet} />
+					<ButtomSheet
+						component={<EditTask currentSheet={currentSheet} />}
+						refRBSheet={refRBSheet}
+					/>
 					{/* </TouchableWithoutFeedback> */}
 				</View>
 			</View>
@@ -99,7 +160,7 @@ const styles = StyleSheet.create({
 		// alignItems: 'center',
 		width: '100%',
 		paddingHorizontal: 25,
-		backgroundColor: '#FFF',
+		// backgroundColor: '#FFF',
 	},
 
 	navBar: {

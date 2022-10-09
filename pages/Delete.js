@@ -1,5 +1,5 @@
 // import { StatusBar } from 'expo-status-bar';
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
 	StyleSheet,
 	Text,
@@ -19,9 +19,39 @@ import CreateTask from '../components/CreateTask';
 import Input from '../components/Input';
 import TaskList, { DeleteTaskList } from '../components/TaskList';
 import ButtomSheet from './../components/ButtomSheet';
+import * as SecureStore from 'expo-secure-store';
+import axios from 'axios';
 
 export default function Delete({ navigation }) {
 	const refRBSheet = useRef();
+	const [tasks, setTasks] = useState([]);
+	const [loopTasks, setLoopTasks] = useState('');
+	// const [completed, setComplted] = useState()
+
+	useEffect(() => {
+		async function getTask() {
+			try {
+				let token = await SecureStore.getItemAsync('user_token');
+
+				const { data } = await axios.get(
+					'https://quicktodo-server.herokuapp.com/task',
+					{
+						headers: { Authorization: `Bearer ${token}` },
+					}
+				);
+				setTasks(data.task);
+
+				const fillteredTask = data.task.filter(
+					(item) => item.completed === true
+				);
+
+				setLoopTasks(fillteredTask.length);
+			} catch (err) {
+				console.log(err);
+			}
+		}
+		getTask();
+	}, []);
 	return (
 		<SafeAreaView
 			style={[
@@ -60,21 +90,32 @@ export default function Delete({ navigation }) {
 						<Card cardTitle={'Pending'} cardNumber={5} />
 					</View>
 					<View style={styles.taskHeading}>
-						<Text style={styles.titleHeading}>My Task</Text>
-						<View style={styles.iconContainer}>
+						<Text style={styles.titleHeading}>Delete Task</Text>
+						{/* <View style={styles.iconContainer}>
 							<TouchableOpacity
 								activeOpacity={0.8}
 								onPress={() => refRBSheet.current.open()}>
 								<Image source={require('../assets/plusico.png')} />
 							</TouchableOpacity>
-						</View>
+						</View> */}
 					</View>
 
 					{/* <View style={styles.taskContainer}></View> */}
 					<ScrollView style={styles.scrollView}>
 						<View style={styles.inputContainer}>
-							<DeleteTaskList taskText='Go Shopping' />
-							<DeleteTaskList taskText='Take My Bath' />
+							{tasks ? (
+								tasks.map((task) => (
+									<DeleteTaskList
+										key={task.id}
+										id={task.id}
+										taskText={task.title}
+										completed={task.completed}
+										refRBSheet={refRBSheet}
+									/>
+								))
+							) : (
+								<Text>Loading ...</Text>
+							)}
 						</View>
 					</ScrollView>
 					<ButtomSheet component={<CreateTask />} refRBSheet={refRBSheet} />

@@ -9,14 +9,15 @@ function StackNavigate() {
 		<Stack.Navigator>
 			<Stack.Screen
 				options={{ headerShown: false }}
-				name='SignUp'
-				component={SignUp}
-			/>
-			<Stack.Screen
-				options={{ headerShown: false }}
 				name='SignIn'
 				component={SignIn}
 			/>
+			<Stack.Screen
+				options={{ headerShown: false }}
+				name='SignUp'
+				component={SignUp}
+			/>
+
 			{/* <Stack.Screen
 				name='Dashboard'
 				component={DrawerNavigate}

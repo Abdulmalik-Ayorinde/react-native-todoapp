@@ -19,7 +19,7 @@ import CreateTask from '../components/CreateTask';
 import Input from '../components/Input';
 import TaskList from '../components/TaskList';
 import ButtomSheet from './../components/ButtomSheet';
-import { axios } from 'axios';
+import axios from 'axios';
 import { useState } from 'react';
 import { useContext } from 'react';
 import { UserContext } from '../context/AuthContext';
@@ -28,7 +28,8 @@ import * as SecureStore from 'expo-secure-store';
 export default function Home({ navigation }) {
 	const { state } = useContext(UserContext);
 	const [tasks, setTasks] = useState([]);
-	console.log('from home', state);
+	const [loopTasks, setLoopTasks] = useState('');
+
 	useEffect(() => {
 		async function getTask() {
 			try {
@@ -40,10 +41,14 @@ export default function Home({ navigation }) {
 						headers: { Authorization: `Bearer ${token}` },
 					}
 				);
-				// setTasks(data.task);
-				console.log(data.task);
+				setTasks(data.task);
+
+				const fillteredTask = data.task.filter(
+					(item) => item.completed === true
+				);
+
+				setLoopTasks(fillteredTask.length);
 			} catch (err) {
-				// alert('error');
 				console.log(err);
 			}
 		}
@@ -84,8 +89,8 @@ export default function Home({ navigation }) {
 				<View behavior={'position'} style={styles.mainContainer}>
 					{/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
 					<View style={styles.cardContainer}>
-						<Card cardTitle={'Completed'} cardNumber={0} />
-						<Card cardTitle={'Pending'} cardNumber={5} />
+						<Card cardTitle={'Completed'} cardNumber={loopTasks} />
+						<Card cardTitle={'Pending'} cardNumber={tasks.length - loopTasks} />
 					</View>
 					<View style={styles.taskHeading}>
 						<Text style={styles.titleHeading}>My Task</Text>
@@ -101,21 +106,17 @@ export default function Home({ navigation }) {
 					{/* <View style={styles.taskContainer}></View> */}
 					<ScrollView style={styles.scrollView}>
 						<View style={styles.inputContainer}>
-							<TaskList taskText='Go Shopping' />
-							<TaskList taskText='Take My Bath' />
-							<TaskList taskText='Take My Bath' />
-							<TaskList taskText='Take My Bath' />
-							<TaskList taskText='Take My Bath' />
-							<TaskList taskText='Take My Bath' />
-							<TaskList taskText='Take My Bath' />
-							<TaskList taskText='Take My Bath' />
-							<TaskList taskText='Take My Bath' />
-							<TaskList taskText='Take My Bath' />
-							<TaskList taskText='Take My Bath' />
-							<TaskList taskText='Take My Bath' />
-							<TaskList taskText='Take My Bath' />
-							<TaskList taskText='Take My Bath' />
-							<TaskList taskText='Take My Bath' />
+							{tasks ? (
+								tasks.map((task) => (
+									<TaskList
+										key={task.id}
+										taskText={task.title}
+										completed={task.completed}
+									/>
+								))
+							) : (
+								<Text>Loading ...</Text>
+							)}
 						</View>
 					</ScrollView>
 					<ButtomSheet component={<CreateTask />} refRBSheet={refRBSheet} />

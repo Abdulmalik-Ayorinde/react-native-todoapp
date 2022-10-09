@@ -1,8 +1,9 @@
 import React from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View, TouchableOpacity } from 'react-native';
 import BouncyCheckbox from 'react-native-bouncy-checkbox';
 
-function TaskList({ taskText }) {
+function TaskList({ taskText, completed }) {
+	const [checkboxState, setCheckboxState] = React.useState(completed);
 	return (
 		<View style={styles.container}>
 			<BouncyCheckbox
@@ -10,6 +11,7 @@ function TaskList({ taskText }) {
 				fillColor='#3DA9FC'
 				unfillColor='#FFFFFF'
 				text={taskText}
+				isChecked={checkboxState}
 				iconStyle={{ borderColor: '#3DA9FC', borderRadius: 5 }}
 				innerIconStyle={{
 					borderWidth: 2,
@@ -26,9 +28,7 @@ function TaskList({ taskText }) {
 					color: '#000',
 					// backgroundColor: 'red',
 				}}
-				onPress={(isChecked) => {
-					// console.log(isChecked);
-				}}
+				onPress={() => setCheckboxState(!checkboxState)}
 				// iconComponent={<ImgComponent />}
 				checkIconImageSource={
 					<Image source={require('../assets/select-ico.png')} />
@@ -41,15 +41,24 @@ function TaskList({ taskText }) {
 
 export default TaskList;
 
-export function EditTaskList({ taskText }) {
+export function EditTaskList({
+	taskText,
+	refRBSheet,
+	completed,
+	setCurrentSheet,
+	id,
+}) {
+	const [checkboxState, setCheckboxState] = React.useState(completed);
+
 	return (
 		<View style={styles.container}>
 			<BouncyCheckbox
 				size={25}
+				isChecked={checkboxState}
 				fillColor='#3DA9FC'
 				unfillColor='#FFFFFF'
 				text={taskText}
-				iconStyle={{ borderColor: '#3DA9FC', borderRadius: 5 }}
+				iconStyle={{ borderColor: '#000', borderRadius: 5 }}
 				innerIconStyle={{
 					borderWidth: 2,
 					borderRadius: 5,
@@ -65,9 +74,7 @@ export function EditTaskList({ taskText }) {
 					color: '#000',
 					// backgroundColor: 'red',
 				}}
-				onPress={(isChecked) => {
-					// console.log(isChecked);
-				}}
+				onPress={() => setCheckboxState(!checkboxState)}
 				// iconComponent={<ImgComponent />}
 				checkIconImageSource={
 					<Image source={require('../assets/select-ico.png')} />
@@ -75,18 +82,28 @@ export function EditTaskList({ taskText }) {
 				// ImageComponent={<ImgComponent />}
 			/>
 			<View style={styles.deleteIco}>
-				<Image source={require('../assets/edit-ico.png')} />
+				<TouchableOpacity
+					activeOpacity={0.8}
+					onPress={() => {
+						setCurrentSheet(id);
+						refRBSheet.current.open();
+					}}>
+					<Image source={require('../assets/edit-ico.png')} />
+				</TouchableOpacity>
 			</View>
 		</View>
 	);
 }
 
-export function DeleteTaskList({ taskText }) {
+export function DeleteTaskList({ taskText, refRBSheet, completed }) {
+	const [checkboxState, setCheckboxState] = React.useState(completed);
+
 	return (
 		<View style={styles.container}>
 			<BouncyCheckbox
 				size={25}
 				fillColor='#3DA9FC'
+				isChecked={checkboxState}
 				unfillColor='#FFFFFF'
 				text={taskText}
 				iconStyle={{ borderColor: '#3DA9FC', borderRadius: 5 }}
@@ -105,9 +122,7 @@ export function DeleteTaskList({ taskText }) {
 					color: '#000',
 					// backgroundColor: 'red',
 				}}
-				onPress={(isChecked) => {
-					// console.log(isChecked);
-				}}
+				onPress={() => setCheckboxState(!checkboxState)}
 				// iconComponent={<ImgComponent />}
 				checkIconImageSource={
 					<Image source={require('../assets/select-ico.png')} />
@@ -115,7 +130,11 @@ export function DeleteTaskList({ taskText }) {
 				// ImageComponent={<ImgComponent />}
 			/>
 			<View style={styles.deleteIco}>
-				<Image source={require('../assets/trash-ico.png')} />
+				<TouchableOpacity
+					activeOpacity={0.8}
+					onPress={() => refRBSheet.current.open()}>
+					<Image source={require('../assets/trash-ico.png')} />
+				</TouchableOpacity>
 			</View>
 		</View>
 	);
