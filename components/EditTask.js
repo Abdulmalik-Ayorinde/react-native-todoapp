@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { View, Button, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import ButtonComponent from './Button';
 import Input from './Input';
 import axios from 'axios';
 
-function CreateTask({ currentSheet }) {
+function EditTask({ currentSheet, onRefresh, refRBSheet }) {
 	const [taskTitle, setTaskTitle] = useState();
+	const [updating, setUpdating] = useState(false);
 
 	useEffect(() => {
 		async function getTask() {
@@ -29,10 +30,11 @@ function CreateTask({ currentSheet }) {
 	}, [currentSheet]);
 
 	async function updateTask() {
+		setUpdating(true);
 		try {
 			let token = await SecureStore.getItemAsync('user_token');
 
-			const { data } = await axios.put(
+			await axios.put(
 				`https://quicktodo-server.herokuapp.com/task/${currentSheet}`,
 				{
 					title: taskTitle,
@@ -41,9 +43,15 @@ function CreateTask({ currentSheet }) {
 					headers: { Authorization: `Bearer ${token}` },
 				}
 			);
-			console.log('done', data);
+			// console.log('done', data);
+			setUpdating(false);
+
+			refRBSheet.current.close();
+			onRefresh();
 		} catch (err) {
 			console.log(err);
+			setUpdating(false);
+			Alert.alert('An error Occured');
 		}
 	}
 
@@ -59,13 +67,16 @@ function CreateTask({ currentSheet }) {
 				/>
 			</View>
 			<View style={styles.inputContainer}>
-				<ButtonComponent submit={updateTask} title='Update' />
+				<ButtonComponent
+					submit={updateTask}
+					title={updating ? 'Updating...' : 'Update'}
+				/>
 			</View>
 		</View>
 	);
 }
 
-export default CreateTask;
+export default EditTask;
 
 const styles = StyleSheet.create({
 	taskContainer: {

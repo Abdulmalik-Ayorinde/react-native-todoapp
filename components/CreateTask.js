@@ -1,17 +1,54 @@
-import React from 'react';
-import { View, Button, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Button, Text, StyleSheet, Alert } from 'react-native';
 import ButtonComponent from './Button';
 import Input from './Input';
+import * as SecureStore from 'expo-secure-store';
+import axios from 'axios';
+function CreateTask({ refRBSheet, onRefresh }) {
+	const [taskTitle, setTaskTitle] = useState();
+	const [creating, setCreating] = useState(false);
 
-function CreateTask() {
+	async function createSIngleTask() {
+		setCreating(true);
+		try {
+			let token = await SecureStore.getItemAsync('user_token');
+
+			await axios.post(
+				`https://quicktodo-server.herokuapp.com/task`,
+				{
+					title: taskTitle,
+				},
+				{
+					headers: { Authorization: `Bearer ${token}` },
+				}
+			);
+			setCreating(false);
+
+			refRBSheet.current.close();
+			onRefresh();
+		} catch (err) {
+			console.log(err);
+			setCreating(false);
+			Alert.alert('An Error Occured');
+		}
+	}
+
 	return (
 		<View style={styles.taskContainer}>
 			<Text style={styles.cardTitle}>Add Task</Text>
 			<View style={styles.inputContainer}>
-				<Input title={'Task Name'} placeholder={'Add Task'} />
+				<Input
+					title={'Task Name'}
+					text={taskTitle}
+					placeholder={'Add Task'}
+					setText={setTaskTitle}
+				/>
 			</View>
 			<View style={styles.inputContainer}>
-				<ButtonComponent title='Add' />
+				<ButtonComponent
+					submit={createSIngleTask}
+					title={creating ? 'Creating Task ...' : 'Add'}
+				/>
 			</View>
 		</View>
 	);

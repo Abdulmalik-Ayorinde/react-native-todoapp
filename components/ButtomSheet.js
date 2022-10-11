@@ -18,7 +18,7 @@ function ButtomSheet({ refRBSheet, component }) {
 			<RBSheet
 				ref={ref}
 				closeOnDragDown={true}
-				closeOnPressMask={false}
+				closeOnPressMask={true}
 				customStyles={{
 					wrapper: {
 						backgroundColor: '#0A070835',

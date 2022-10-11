@@ -10,6 +10,7 @@ import {
 	TouchableWithoutFeedback,
 	KeyboardAvoidingView,
 	Keyboard,
+	Alert,
 } from 'react-native';
 import ButtonComponent from '../components/Button';
 import Input from '../components/Input';
@@ -25,6 +26,7 @@ export default function SignIn({ navigation }) {
 	const { state, dispatch } = useContext(UserContext);
 
 	async function getUser() {
+		setIsLoading(true);
 		try {
 			const { data } = await axios.post(
 				'https://quicktodo-server.herokuapp.com/auth',
@@ -37,8 +39,13 @@ export default function SignIn({ navigation }) {
 			await SecureStore.setItemAsync('user_token', data.token);
 			await dispatch({ type: 'SET_TOKEN', payload: data.token });
 			console.log(data);
+			setIsLoading(false);
+
 			// console.log('from login', state);
 		} catch (err) {
+			setIsLoading(false);
+			Alert.alert('Login Falied', 'Email and password Required');
+			// alert('login failed');
 			console.log(err);
 		}
 	}
@@ -92,7 +99,7 @@ export default function SignIn({ navigation }) {
 							<ButtonComponent
 								page={'SignUp'}
 								navigation={navigation}
-								title={'Sign In'}
+								title={isLoading ? 'Signing In...' : 'Sign In'}
 								submit={getUser}
 							/>
 						</View>

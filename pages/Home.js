@@ -1,5 +1,5 @@
 // import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import {
 	StyleSheet,
 	Text,
@@ -12,7 +12,10 @@ import {
 	Keyboard,
 	Image,
 	ScrollView,
+	RefreshControl,
+	FlatList,
 } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import ButtonComponent from '../components/Button';
 import Card from '../components/Card';
 import CreateTask from '../components/CreateTask';
@@ -29,31 +32,67 @@ export default function Home({ navigation }) {
 	const { state } = useContext(UserContext);
 	const [tasks, setTasks] = useState([]);
 	const [loopTasks, setLoopTasks] = useState('');
+	const isFocused = useIsFocused();
 
-	useEffect(() => {
-		async function getTask() {
-			try {
-				let token = await SecureStore.getItemAsync('user_token');
+	async function getTask() {
+		try {
+			let token = await SecureStore.getItemAsync('user_token');
 
-				const { data } = await axios.get(
-					'https://quicktodo-server.herokuapp.com/task',
-					{
-						headers: { Authorization: `Bearer ${token}` },
-					}
-				);
-				setTasks(data.task);
+			const { data } = await axios.get(
+				'https://quicktodo-server.herokuapp.com/task',
+				{
+					headers: { Authorization: `Bearer ${token}` },
+				}
+			);
+			setTasks(data.task);
 
-				const fillteredTask = data.task.filter(
-					(item) => item.completed === true
-				);
+			const fillteredTask = data.task.filter((item) => item.completed === true);
 
-				setLoopTasks(fillteredTask.length);
-			} catch (err) {
-				console.log(err);
-			}
+			setLoopTasks(fillteredTask.length);
+		} catch (err) {
+			console.log(err);
 		}
-		getTask();
+	}
+	useEffect(() => {
+		// getTask();
+		if (isFocused) {
+			onRefresh();
+		}
+
+		// console.log('ran');
+	}, [isFocused]);
+
+	// console.log('ran');
+
+	const [refreshing, setRefreshing] = React.useState(false);
+
+	const onRefresh = useCallback(() => {
+		setRefreshing(true);
+		console.log('refresh ran..');
+		try {
+			getTask();
+			setRefreshing(false);
+		} catch (err) {
+			console.log(err);
+		}
 	}, []);
+
+	// onRefresh;
+
+	const renderItem = ({ item }) => {
+		return (
+			<TaskList
+				key={item.id}
+				id={item.id}
+				taskText={item.title}
+				completed={item.completed}
+				refRBSheet={refRBSheet}
+				onRefresh={onRefresh}
+				// setCurrentSheet={setCurrentSheet}
+			/>
+		);
+	};
+
 	const refRBSheet = useRef();
 	return (
 		<SafeAreaView
@@ -103,23 +142,70 @@ export default function Home({ navigation }) {
 						</View>
 					</View>
 
-					{/* <View style={styles.taskContainer}></View> */}
-					<ScrollView style={styles.scrollView}>
-						<View style={styles.inputContainer}>
-							{tasks ? (
-								tasks.map((task) => (
-									<TaskList
-										key={task.id}
-										taskText={task.title}
-										completed={task.completed}
-									/>
-								))
-							) : (
-								<Text>Loading ...</Text>
-							)}
-						</View>
-					</ScrollView>
-					<ButtomSheet component={<CreateTask />} refRBSheet={refRBSheet} />
+					<View style={styles.taskContainer}>
+						<FlatList
+							data={tasks}
+							renderItem={renderItem}
+							keyExtractor={(item) => item.id}
+							style={styles.scrollView}
+							refreshControl={
+								<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+							}
+						/>
+					</View>
+
+					{/* <ScrollView
+						refreshControl={
+							<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+						}
+						style={styles.scrollView}>
+						
+						{tasks ? (
+							tasks.map((task) => (
+								<TaskList
+									key={task.id}
+									id={task.id}
+									taskText={task.title}
+									completed={task.completed}
+									refRBSheet={refRBSheet}
+									onRefresh={onRefresh}
+									// setCurrentSheet={setCurrentSheet}
+								/>
+							))
+						) : (
+							<Text>Loading ...</Text>
+						)}
+						
+					</ScrollView> */}
+					{/* <FlatList
+						refreshControl={
+							<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+						}
+						style={styles.scrollView}
+						data={tasks}
+						renderItem={({ item }) => {
+							console.log(item);
+							return (
+								// <Text style={styles.item}>{item.key}</Text>
+								<TaskList
+									key={item?.id}
+									id={item?.id}
+									taskText={item?.title}
+									completed={item?.completed}
+									refRBSheet={refRBSheet}
+									onRefresh={onRefresh}
+									// setCurrentSheet={setCurrentSheet}
+								/>
+							);
+						}}
+					/> */}
+					{/* <Text>Hello</Text> */}
+					<ButtomSheet
+						component={
+							<CreateTask onRefresh={onRefresh} refRBSheet={refRBSheet} />
+						}
+						refRBSheet={refRBSheet}
+					/>
 					{/* </TouchableWithoutFeedback> */}
 				</View>
 			</View>
@@ -137,7 +223,7 @@ const styles = StyleSheet.create({
 	mainContainer: {
 		// display: 'flex',
 		// paddingHorizontal: 24,
-		height: '100%',
+		// height: '100%',
 		width: '100%',
 		// backgroundColor: 'red',
 		alignItems: 'center',
@@ -145,6 +231,8 @@ const styles = StyleSheet.create({
 	globalContainer: {
 		alignItems: 'center',
 		width: '100%',
+		// height: 500,
+		// backgroundColor: 'red',
 		paddingHorizontal: 25,
 	},
 
@@ -195,14 +283,20 @@ const styles = StyleSheet.create({
 		width: '100%',
 	},
 	taskContainer: {
-		// height: '50%',
+		height: '100%',
+		// flex: 1,
+		height: 470,
 		justifyContent: 'center',
 		alignItems: 'center',
 		width: '100%',
-		backgroundColor: 'green',
+		// backgroundColor: 'green',
 	},
 	scrollView: {
+		flex: 1,
 		// backgroundColor: 'green',
 		width: '100%',
+		// paddingTop: 0,
+		// marginBottom: 20,
+		// height: 500,
 	},
 });

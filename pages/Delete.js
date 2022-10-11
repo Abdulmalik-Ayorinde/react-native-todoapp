@@ -1,5 +1,5 @@
 // import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
 	StyleSheet,
 	Text,
@@ -12,6 +12,8 @@ import {
 	Keyboard,
 	Image,
 	ScrollView,
+	FlatList,
+	RefreshControl,
 } from 'react-native';
 import ButtonComponent from '../components/Button';
 import Card from '../components/Card';
@@ -21,37 +23,64 @@ import TaskList, { DeleteTaskList } from '../components/TaskList';
 import ButtomSheet from './../components/ButtomSheet';
 import * as SecureStore from 'expo-secure-store';
 import axios from 'axios';
+import DeleteTask from './../components/DeleteTask';
 
 export default function Delete({ navigation }) {
 	const refRBSheet = useRef();
 	const [tasks, setTasks] = useState([]);
 	const [loopTasks, setLoopTasks] = useState('');
+	const [currentSheet, setCurrentSheet] = useState('');
+
 	// const [completed, setComplted] = useState()
+	async function getTask() {
+		try {
+			let token = await SecureStore.getItemAsync('user_token');
 
-	useEffect(() => {
-		async function getTask() {
-			try {
-				let token = await SecureStore.getItemAsync('user_token');
+			const { data } = await axios.get(
+				'https://quicktodo-server.herokuapp.com/task',
+				{
+					headers: { Authorization: `Bearer ${token}` },
+				}
+			);
+			setTasks(data.task);
 
-				const { data } = await axios.get(
-					'https://quicktodo-server.herokuapp.com/task',
-					{
-						headers: { Authorization: `Bearer ${token}` },
-					}
-				);
-				setTasks(data.task);
+			const fillteredTask = data.task.filter((item) => item.completed === true);
 
-				const fillteredTask = data.task.filter(
-					(item) => item.completed === true
-				);
-
-				setLoopTasks(fillteredTask.length);
-			} catch (err) {
-				console.log(err);
-			}
+			setLoopTasks(fillteredTask.length);
+		} catch (err) {
+			console.log(err);
 		}
+	}
+	useEffect(() => {
 		getTask();
+		onRefresh();
 	}, []);
+
+	const [refreshing, setRefreshing] = React.useState(false);
+
+	const onRefresh = useCallback(() => {
+		setRefreshing(true);
+		try {
+			getTask();
+			setRefreshing(false);
+		} catch (err) {
+			console.log(err);
+		}
+	}, []);
+
+	const renderItem = ({ item }) => {
+		return (
+			<DeleteTaskList
+				key={item.id}
+				id={item.id}
+				taskText={item.title}
+				completed={item.completed}
+				refRBSheet={refRBSheet}
+				onRefresh={onRefresh}
+				setCurrentSheet={setCurrentSheet}
+			/>
+		);
+	};
 	return (
 		<SafeAreaView
 			style={[
@@ -100,8 +129,19 @@ export default function Delete({ navigation }) {
 						</View> */}
 					</View>
 
+					<View style={styles.taskContainer}>
+						<FlatList
+							data={tasks}
+							renderItem={renderItem}
+							keyExtractor={(item) => item.id}
+							style={styles.scrollView}
+							refreshControl={
+								<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+							}
+						/>
+					</View>
 					{/* <View style={styles.taskContainer}></View> */}
-					<ScrollView style={styles.scrollView}>
+					{/* <ScrollView style={styles.scrollView}>
 						<View style={styles.inputContainer}>
 							{tasks ? (
 								tasks.map((task) => (
@@ -117,8 +157,17 @@ export default function Delete({ navigation }) {
 								<Text>Loading ...</Text>
 							)}
 						</View>
-					</ScrollView>
-					<ButtomSheet component={<CreateTask />} refRBSheet={refRBSheet} />
+					</ScrollView> */}
+					<ButtomSheet
+						component={
+							<DeleteTask
+								refRBSheet={refRBSheet}
+								onRefresh={onRefresh}
+								currentSheet={currentSheet}
+							/>
+						}
+						refRBSheet={refRBSheet}
+					/>
 					{/* </TouchableWithoutFeedback> */}
 				</View>
 			</View>
@@ -194,14 +243,20 @@ const styles = StyleSheet.create({
 		width: '100%',
 	},
 	taskContainer: {
-		// height: '50%',
+		height: '100%',
+		// flex: 1,
+		height: 470,
 		justifyContent: 'center',
 		alignItems: 'center',
 		width: '100%',
-		backgroundColor: 'green',
+		// backgroundColor: 'green',
 	},
 	scrollView: {
+		flex: 1,
 		// backgroundColor: 'green',
 		width: '100%',
+		// paddingTop: 0,
+		// marginBottom: 20,
+		// height: 500,
 	},
 });
