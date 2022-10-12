@@ -15,6 +15,8 @@ import {
 	FlatList,
 	RefreshControl,
 } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
+
 import ButtonComponent from '../components/Button';
 import Card from '../components/Card';
 import CreateTask from '../components/CreateTask';
@@ -26,6 +28,7 @@ import axios from 'axios';
 import DeleteTask from './../components/DeleteTask';
 
 export default function Delete({ navigation }) {
+	const isFocused = useIsFocused();
 	const refRBSheet = useRef();
 	const [tasks, setTasks] = useState([]);
 	const [loopTasks, setLoopTasks] = useState('');
@@ -53,7 +56,9 @@ export default function Delete({ navigation }) {
 	}
 	useEffect(() => {
 		getTask();
-		onRefresh();
+		if (isFocused) {
+			onRefresh();
+		}
 	}, []);
 
 	const [refreshing, setRefreshing] = React.useState(false);

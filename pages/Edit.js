@@ -18,6 +18,8 @@ import {
 	RefreshControl,
 	FlatList,
 } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
+
 import ButtomSheet from '../components/ButtomSheet';
 import ButtonComponent from '../components/Button';
 import Card from '../components/Card';
@@ -32,6 +34,8 @@ export default function Edit({ navigation }) {
 	const [tasks, setTasks] = useState([]);
 	const [loopTasks, setLoopTasks] = useState('');
 	const [currentSheet, setCurrentSheet] = useState('');
+	const isFocused = useIsFocused();
+
 	// const [completed, setComplted] = useState()
 	async function getTask() {
 		try {
@@ -54,7 +58,9 @@ export default function Edit({ navigation }) {
 	}
 	useEffect(() => {
 		getTask();
-		onRefresh();
+		if (isFocused) {
+			onRefresh();
+		}
 	}, []);
 
 	const [refreshing, setRefreshing] = React.useState(false);
